@@ -11,8 +11,7 @@ N = 750;
 h = (tf - t0)/N;
 g_d = [-1;-1;-1;-1];
 g_u = [1;1;1;1];
-%lb = zeros(2*N,1);
-%lu=lb+0.02;
+
 lb = -1*ones(2*N,1);
 x_h_values = zeros(4, N+1);
 c_h_values = zeros(2, N);
@@ -20,13 +19,14 @@ d_h_values = zeros(4, N);
 F=@(t)expm(A*t);
 l = @(t) H*F(tf-t)*f;
 x0 = [0.1; -0.1; 0; 0.33];
+G0=[1;1;1;1];
 w =@(t)0.01*sin(2*t);
 options = optimoptions('fmincon','Algorithm','active-set');
 
+
+F0=F(t0+2*h);
 funForC = @(t)H0*F(tf-t)*B;
 funForD = @(t)H*F(tf-t)*B;
-G=[1;1;1;1];
-
 c_h = @(s)integral(funForC,s,s+h,'ArrayValued', true);
 d_h = @(s)integral(funForD,s,s+h,'ArrayValued', true);
 t=d_h(t0);
@@ -40,10 +40,10 @@ for i = 1:N
     end
 end
  gama = @(s) w(s)*integral(@(t)abs(l(t)),t0,tf,'ArrayValued', true);
-  blp_n = G - H*F(tf-t0)*x0;
+  Gi = G0 - max(H*F(tf-t0)*x0);
   blp_v = g_u - gama(t0) -H*F(tf-t0)*x0;
   
-  u0 = linprog(-c_h_values,d_h_values,blp_n,[],[],lb',-1*lb');
+  u0 = linprog(-c_h_values,d_h_values,Gi,[],[],lb',-1*lb');
   u=reshape(u0, 2, N);
   u01=u(1,:);
   u01=[u01'; u01(end)];
